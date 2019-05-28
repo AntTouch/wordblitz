@@ -1,10 +1,23 @@
-# importing "copy" for copy operations 
 import copy 
 import sys
 from multiprocessing.dummy import Pool
 from functools import partial
 from itertools import repeat
 from pprint import pprint
+
+class Unbuffered(object):
+   def __init__(self, stream):
+       self.stream = stream
+   def write(self, data):
+       self.stream.write(data)
+       self.stream.flush()
+   def writelines(self, datas):
+       self.stream.writelines(datas)
+       self.stream.flush()
+   def __getattr__(self, attr):
+       return getattr(self.stream, attr)
+
+sys.stdout = Unbuffered(sys.stdout)
 
 sys.setrecursionlimit(5000)
 def next_character(visited, current_row, current_column, dictionary):
@@ -15,9 +28,9 @@ def next_character(visited, current_row, current_column, dictionary):
 	visited.append((current_row, current_column))
 	for letter in visited:
 		word+=board[letter[0]][letter[1]]
-	if(word.upper() in dictionary and len(word) > 5):
+	if(word.upper() in dictionary and len(word) > 3):
 		word_candidates.append(word)
-		print(word)
+		print(word, end=' ')
 		# word_candidates.append(word)
 	prev_row = current_row - 1
 	next_row = current_row + 1
@@ -59,10 +72,12 @@ def create_board(input):
 	print(input[8], input[9], input[10], input[11])
 	print(input[12], input[13], input[14], input[15])
 	return arr
-f = open('wordlist-en.txt', 'r')
+f = open('words-greek.txt', 'r')
 dictionary = set(f.read().splitlines())
-input = input("the words? (max. 16)")
+input = input("Πληκτρολογήστε τα γράμματα των τεσσάρων γραμμών κολλητά (16): ")
+print('')
 board = create_board(input)
+print('')
 word_candidates = []
 iterator = []
 for row in range(0, 4):
@@ -71,6 +86,44 @@ for row in range(0, 4):
 results = []
 with Pool(4) as pool:
 	results = pool.starmap(next_character, iterator)
+word_candidates.sort()
 word_candidates.sort(key=len, reverse=True)
-print(sum(results))
-pprint(word_candidates)
+#print(sum(results))
+#print(len(word_candidates))
+#pprint(word_candidates)
+print('\n')
+
+def divideList(lst): 
+    dct = {} 
+  
+    for element in lst: 
+        if len(element) not in dct: 
+            dct[len(element)] = [element] 
+        elif len(element) in dct: 
+            dct[len(element)] += [element] 
+      
+    res = [] 
+    for key in sorted(dct): 
+        res.append(dct[key]) 
+      
+    return res 
+    
+#pprint(dictionary)
+#xorizei tin lista se stiles analoga me to megethos tis leksis
+a=divideList(word_candidates)
+
+#briskoi tin lista me to megalitero ypsos
+maxlen=0
+for i in range(len(a)):
+    if len(a[i]) > maxlen: maxlen = len(a[i])
+
+#loop me basi to megethos tis megaliteris stilis
+for i in range(maxlen):
+    for j in range(len(a)):
+        #pernei apo kathe grammi to stoixeio kathe listas an yparxei
+        #an den yparxei antikathista to plithos ton grammaton me kena
+        if len(a[j]) > i:
+            print(a[j][i], end =" ")
+        else :
+            print(' ' * len(a[j][0]), end =" ")
+    print('')
